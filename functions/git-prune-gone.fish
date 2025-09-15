@@ -1,9 +1,17 @@
+# POTENTIAL FUTURE ITEMS:
+# 1 flag to ignore branches not merged into a specific branch
+# 2 --dry-run just to see what it'd delete
+# 
+# Usage: git-prune-gone [-y|--yes] [protected_branch ...]
 function git-prune-gone
   echo "Fetching latest remote branches..."
+  argparse -n git-prune-gone 'y/yes' -- $argv
+  or return
+
   git fetch --prune
 
   set gone_branches (
-    git branch -vv | awk '/: gone]/{print $1}' |
+    git branch -vv | grep -v '^+' | awk '/: gone]/{print $1}' |
     sed 's/^\*//' |
     string trim |
     string match -rv '^$'
@@ -34,8 +42,12 @@ function git-prune-gone
     echo "  $b"
   end
 
-  printf "Delete these branches? Type 'y' to confirm:\n"
-  read confirm
+  if set -q _flag_y
+    set confirm y
+  else
+    printf "Delete these branches? Type 'y' to confirm:\n"
+    read confirm
+  end
 
   switch $confirm
     case y Y
